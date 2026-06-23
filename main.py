@@ -26,7 +26,6 @@ load_dotenv()
 BASE_DIR = Path(__file__).parent
 SCENARIOS_PATH = BASE_DIR / "scenarios" / "scenarios.json"
 REPORTS_DIR = BASE_DIR / "reports"
-RECORDINGS_DIR = BASE_DIR / "recordings"
 TRANSCRIPTS_DIR = BASE_DIR / "transcripts"
 
 
@@ -90,7 +89,7 @@ def run_scenario(
 ) -> None:
     """Execute one test scenario end-to-end."""
     from bot.analyzer import analyze_transcript
-    from bot.caller import TwilioCaller
+    from bot.caller import SignalWireCaller
     from bot.conversation import set_scenario_context
 
     if delay_before:
@@ -104,10 +103,11 @@ def run_scenario(
     # Tell the WebSocket handler which scenario/persona to use
     set_scenario_context(scenario, scenario_num)
 
-    caller = TwilioCaller(
-        account_sid=os.environ["TWILIO_ACCOUNT_SID"],
-        auth_token=os.environ["TWILIO_AUTH_TOKEN"],
-        from_number=os.environ["TWILIO_PHONE_NUMBER"],
+    caller = SignalWireCaller(
+        project_id=os.environ["SIGNALWIRE_PROJECT_ID"],
+        api_token=os.environ["SIGNALWIRE_API_TOKEN"],
+        space_url=os.environ["SIGNALWIRE_SPACE_URL"],
+        from_number=os.environ["SIGNALWIRE_PHONE_NUMBER"],
         to_number=os.environ.get("TARGET_PHONE_NUMBER", "+18054398008"),
     )
 
@@ -117,18 +117,30 @@ def run_scenario(
     final_status = caller.wait_for_completion(call_sid)
     print(f"  Status   : {final_status}")
 
-    # Download recording (non-blocking on failure)
-    recording_path = RECORDINGS_DIR / f"call_{scenario_num:02d}.mp3"
-    RECORDINGS_DIR.mkdir(exist_ok=True)
-    caller.download_recording(call_sid, str(recording_path))
-
     # Post-call QA
     transcript_path = TRANSCRIPTS_DIR / f"call_{scenario_num:02d}.txt"
-    if transcript_path.exists():
+    if not transcript_path.exists():
+        # Call never connected — write a stub so the run is always recorded
+        TRANSCRIPTS_DIR.mkdir(exist_ok=True)
+        stub = "\n".join([
+            "=" * 45,
+            f"CALL TRANSCRIPT - Call #{scenario_num:02d}",
+            f"Scenario: {scenario.get('name', 'Unknown')}",
+            f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            f"Duration: 0:00",
+            f"Call status: {final_status} — call did not connect, no conversation recorded.",
+            "=" * 45,
+        ])
+        transcript_path.write_text(stub + "\n")
+        print(f"    Transcript → {transcript_path}  (stub — call did not connect)")
+
+    # Only run QA if the transcript contains actual conversation turns
+    transcript_text = transcript_path.read_text()
+    if "[" in transcript_text:
         bugs = analyze_transcript(transcript_path, scenario, scenario_num)
         print(f"  Bugs found: {len(bugs)}")
     else:
-        print(f"  [WARN] No transcript found at {transcript_path}")
+        print(f"  [SKIP] No conversation to analyse (call status: {final_status})")
 
 
 # ---------------------------------------------------------------------------
@@ -156,9 +168,10 @@ def main() -> None:
     missing = [
         v for v in (
             "OPENAI_API_KEY",
-            "TWILIO_ACCOUNT_SID",
-            "TWILIO_AUTH_TOKEN",
-            "TWILIO_PHONE_NUMBER",
+            "SIGNALWIRE_PROJECT_ID",
+            "SIGNALWIRE_API_TOKEN",
+            "SIGNALWIRE_SPACE_URL",
+            "SIGNALWIRE_PHONE_NUMBER",
             "NGROK_AUTHTOKEN",
         )
         if not os.environ.get(v)

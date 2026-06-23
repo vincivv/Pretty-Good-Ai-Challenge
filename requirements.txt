@@ -1,7 +1,7 @@
 fastapi==0.115.5
 uvicorn[standard]==0.32.1
 python-dotenv==1.0.1
-twilio==9.3.5
+signalwire==1.5.0
 openai==1.54.3
 pyngrok==7.2.2
 numpy==2.1.3

@@ -1,12 +1,12 @@
 """
-Twilio call management: outbound dial, completion polling, recording download.
+SignalWire call management: outbound dial, completion polling, recording download.
 
 Flow per scenario:
   1. make_call()           — dials target, registers ngrok webhook, returns SID
-  2. wait_for_completion() — polls Twilio every 3 s until terminal state
-  3. download_recording()  — waits for Twilio to transcode then saves .mp3
+  2. wait_for_completion() — polls SignalWire every 3 s until terminal state
+  3. download_recording()  — waits for transcoding then saves .mp3
 
-Recording note: Twilio typically takes 30–60 s after a call ends to make
+Recording note: SignalWire typically takes 30–60 s after a call ends to make
 the recording available.  download_recording() polls up to `max_wait` seconds
 and returns False (non-fatal) if it times out.
 """
@@ -15,50 +15,53 @@ import time
 from pathlib import Path
 
 import requests
-from twilio.rest import Client
+from signalwire.rest import Client
 
-# Terminal call statuses from Twilio's state machine
 _TERMINAL_STATUSES = {"completed", "failed", "busy", "no-answer", "canceled"}
 
 
-class TwilioCaller:
-    """Manages one outbound Twilio call from dial to recording download."""
+class SignalWireCaller:
+    """Manages one outbound SignalWire call from dial to recording download."""
 
     def __init__(
         self,
-        account_sid: str,
-        auth_token: str,
+        project_id: str,
+        api_token: str,
+        space_url: str,
         from_number: str,
         to_number: str,
     ) -> None:
-        """Initialise with Twilio credentials and phone numbers.
+        """Initialise with SignalWire credentials and phone numbers.
 
         Args:
-            account_sid:  Twilio Account SID (starts with AC…).
-            auth_token:   Twilio Auth Token.
-            from_number:  Your Twilio phone number in E.164 format.
-            to_number:    Target phone number in E.164 format.
+            project_id:  SignalWire Project ID (found in API Credentials).
+            api_token:   SignalWire API Token.
+            space_url:   Your SignalWire space hostname, e.g. ``yourspace.signalwire.com``.
+            from_number: Your SignalWire phone number in E.164 format.
+            to_number:   Target phone number in E.164 format.
         """
-        self._client = Client(account_sid, auth_token)
-        self._account_sid = account_sid
-        self._auth_token = auth_token
+        self._client = Client(project_id, api_token, signalwire_space_url=space_url)
+        self._project_id = project_id
+        self._api_token = api_token
+        self._space_url = space_url
         self.from_number = from_number
         self.to_number = to_number
 
     # ── dial ──────────────────────────────────────────────────────────────────
 
     def make_call(self, ngrok_url: str) -> str:
-        """Initiate an outbound call and return the Twilio call SID.
+        """Initiate an outbound call and return the call SID.
 
-        Twilio will POST to ``{ngrok_url}/answer`` once the target picks up,
+        SignalWire will POST to ``{ngrok_url}/answer`` once the target picks up,
         which returns the TwiML that opens the Media Stream WebSocket.
 
         Args:
             ngrok_url: Public HTTPS base URL (e.g. ``https://abc.ngrok-free.app``).
 
         Returns:
-            Twilio call SID string (e.g. ``CAxxxxxx``).
+            Call SID string.
         """
+        time.sleep(3)  # avoid exceeding SignalWire's outbound call rate limit
         call = self._client.calls.create(
             to=self.to_number,
             from_=self.from_number,
@@ -72,17 +75,14 @@ class TwilioCaller:
     # ── completion polling ────────────────────────────────────────────────────
 
     def wait_for_completion(self, call_sid: str, timeout: int = 300) -> str:
-        """Block until the call reaches a terminal Twilio status.
-
-        Polls the Twilio Calls API every 3 seconds.
+        """Block until the call reaches a terminal status.
 
         Args:
             call_sid: SID returned by :meth:`make_call`.
-            timeout:  Maximum seconds to wait before giving up (default 5 min).
+            timeout:  Maximum seconds to wait (default 5 min).
 
         Returns:
-            Final status string: ``"completed"``, ``"failed"``, ``"busy"``,
-            ``"no-answer"``, ``"canceled"``, or ``"timeout"``.
+            Final status string or ``"timeout"``.
         """
         deadline = time.time() + timeout
 
@@ -102,11 +102,7 @@ class TwilioCaller:
         save_path: str,
         max_wait: int = 90,
     ) -> bool:
-        """Wait for Twilio to process the call recording, then download it.
-
-        Polls for the recording every 5 seconds.  On success writes an MP3
-        to ``save_path`` and returns ``True``; returns ``False`` on timeout
-        or HTTP error (non-fatal — the run continues without the file).
+        """Wait for SignalWire to process the call recording, then download it.
 
         Args:
             call_sid:  SID of the completed call.
@@ -114,7 +110,7 @@ class TwilioCaller:
             max_wait:  Seconds to wait for the recording (default 90).
 
         Returns:
-            ``True`` if the file was saved, ``False`` otherwise.
+            ``True`` if saved, ``False`` on timeout or HTTP error.
         """
         deadline = time.time() + max_wait
 
@@ -123,15 +119,14 @@ class TwilioCaller:
 
             if recordings and recordings[0].status == "completed":
                 recording = recordings[0]
-                # Build the direct MP3 download URL from the JSON resource URI
                 mp3_url = (
-                    "https://api.twilio.com"
+                    f"https://{self._space_url}"
                     + recording.uri.replace(".json", ".mp3")
                 )
 
                 resp = requests.get(
                     mp3_url,
-                    auth=(self._account_sid, self._auth_token),
+                    auth=(self._project_id, self._api_token),
                     timeout=30,
                 )
 

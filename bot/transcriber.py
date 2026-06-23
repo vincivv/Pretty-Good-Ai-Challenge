@@ -19,7 +19,7 @@ def transcribe_audio(pcm_bytes: bytes, sample_rate: int = 8000) -> str:
 
     Args:
         pcm_bytes:   Raw PCM samples, 16-bit little-endian, mono.
-        sample_rate: Sample rate in Hz (default 8 000 — Twilio mulaw).
+        sample_rate: Sample rate in Hz (default 8 000 — SignalWire mulaw).
 
     Returns:
         Transcribed text, stripped of leading/trailing whitespace.
@@ -36,7 +36,7 @@ def transcribe_audio(pcm_bytes: bytes, sample_rate: int = 8000) -> str:
         wf.writeframes(pcm_bytes)
 
     buf.seek(0)
-    buf.name = "audio.wav"  # openai SDK uses filename to infer format
+    buf.name = "audio.wav"  # SDK uses filename to infer format
 
     response = _client.audio.transcriptions.create(
         model="whisper-1",

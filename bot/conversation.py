@@ -24,6 +24,7 @@ import asyncio
 import base64
 import json
 import time
+import wave
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
@@ -53,8 +54,10 @@ def set_scenario_context(scenario: dict, number: int) -> None:
 
 SAMPLE_RATE = 8_000           # Twilio mulaw sample rate (Hz)
 SILENCE_THRESHOLD = 300.0     # RMS below this value → treat chunk as silence
-SILENCE_MS = 800              # consecutive silent ms required to end a turn
-SILENCE_SAMPLE_COUNT = int(SAMPLE_RATE * SILENCE_MS / 1_000)  # 6 400 samples
+SILENCE_MS = 700              # consecutive silent ms required to end a turn
+SILENCE_SAMPLE_COUNT = int(SAMPLE_RATE * SILENCE_MS / 1_000)  # 5 600 samples
+FIRST_TURN_SILENCE_MS = 1_500  # longer threshold for the agent's opener (multi-sentence)
+FIRST_TURN_SILENCE_COUNT = int(SAMPLE_RATE * FIRST_TURN_SILENCE_MS / 1_000)  # 12 000 samples
 CHUNK_SIZE = 160              # outbound mulaw samples per media message (~20 ms)
 MAX_TURNS = 20                # hard cap to prevent infinite loops
 
@@ -216,9 +219,12 @@ async def stream_websocket(websocket: WebSocket) -> None:
     # ── per-call state ────────────────────────────────────────────────────────
     state = CallState.WAITING
     audio_buffer = bytearray()   # raw PCM16 bytes for the current agent turn
+    inbound_pcm = bytearray()    # full inbound recording (all agent audio)
+    outbound_pcm = bytearray()   # full outbound recording (patient TTS audio)
     silence_samples = 0          # consecutive silent samples counted
     has_speech = False           # have we received any speech this turn?
     is_processing = False        # prevent overlapping process_agent_turn calls
+    first_turn_done = False      # use longer silence gate until opener finishes
 
     conversation_history: list[dict] = []
     transcript_lines: list[str] = []
@@ -237,17 +243,13 @@ async def stream_websocket(websocket: WebSocket) -> None:
         transcript_lines.append(line)
         print(f"    {line}")
 
-    # ── helper: stream outbound audio to Twilio ───────────────────────────────
+    # ── helper: send a mulaw buffer to Twilio in real-time 20 ms chunks ─────────
 
-    async def send_mulaw(mulaw_bytes: bytes) -> None:
-        """Send mulaw audio to Twilio in 20 ms chunks, paced in real time."""
-        nonlocal state
-        state = CallState.PATIENT_SPEAKING
-
+    async def _send_mulaw_buffer(mulaw_bytes: bytes) -> None:
         for i in range(0, len(mulaw_bytes), CHUNK_SIZE):
             chunk = mulaw_bytes[i : i + CHUNK_SIZE]
             if len(chunk) < CHUNK_SIZE:
-                chunk += b"\xff" * (CHUNK_SIZE - len(chunk))  # pad with silence
+                chunk += b"\xff" * (CHUNK_SIZE - len(chunk))
             msg = json.dumps(
                 {
                     "event": "media",
@@ -258,8 +260,50 @@ async def stream_websocket(websocket: WebSocket) -> None:
             try:
                 await websocket.send_text(msg)
             except Exception:
-                return  # WebSocket closed mid-stream
-            await asyncio.sleep(0.018)  # ~20 ms pacing
+                return
+            await asyncio.sleep(0.018)
+
+    # ── helper: stream TTS to Twilio as chunks arrive (low-latency) ───────────
+
+    async def stream_tts(text: str) -> None:
+        """Request TTS and pipe audio to Twilio as soon as each 100 ms chunk arrives.
+
+        First audio is audible ~200–400 ms after the TTS request is made,
+        rather than waiting for the complete response (~1–2 s for longer lines).
+        Also accumulates outbound PCM into outbound_pcm, time-aligned with
+        inbound_pcm so both tracks can be saved as a stereo recording.
+        """
+        nonlocal state
+        state = CallState.PATIENT_SPEAKING
+
+        # Align outbound timeline to current inbound position.
+        # inbound_pcm grows at real-time rate, so its length reflects wall-clock
+        # time since call start.  Padding with zeros fills the STT+GPT gap.
+        pad = len(inbound_pcm) - len(outbound_pcm)
+        if pad > 0:
+            outbound_pcm.extend(b"\x00" * pad)
+
+        TTS_CHUNK = 4_800   # 100 ms of 24 kHz 16-bit PCM before resample+send
+        buf = bytearray()
+
+        async with _ai_client.audio.speech.with_streaming_response.create(
+            model="tts-1",
+            voice="nova",
+            input=text,
+            response_format="pcm",  # 24 kHz 16-bit mono PCM
+        ) as tts_stream:
+            async for raw in tts_stream.iter_bytes(chunk_size=4_096):
+                buf.extend(raw)
+                while len(buf) >= TTS_CHUNK:
+                    pcm_8k = resample_pcm(bytes(buf[:TTS_CHUNK]), 24_000, 8_000)
+                    outbound_pcm.extend(pcm_8k)
+                    await _send_mulaw_buffer(mulaw_encode(pcm_8k))
+                    del buf[:TTS_CHUNK]
+
+            if buf:  # flush final partial chunk
+                pcm_8k = resample_pcm(bytes(buf), 24_000, 8_000)
+                outbound_pcm.extend(pcm_8k)
+                await _send_mulaw_buffer(mulaw_encode(pcm_8k))
 
         state = CallState.WAITING
 
@@ -315,19 +359,8 @@ async def stream_websocket(websocket: WebSocket) -> None:
             log("PATIENT", patient_text)
             conversation_history.append({"role": "assistant", "content": patient_text})
 
-            # 3 ── Text-to-speech (OpenAI TTS, returns PCM at 24 kHz)
-            state = CallState.PATIENT_SPEAKING
-            tts_resp = await _ai_client.audio.speech.create(
-                model="tts-1",
-                voice="nova",
-                input=patient_text,
-                response_format="pcm",  # 24 kHz 16-bit mono raw PCM
-            )
-
-            # 4 ── Resample 24 kHz → 8 kHz, encode to mulaw, send
-            pcm_8k = resample_pcm(tts_resp.content, from_rate=24_000, to_rate=8_000)
-            mulaw_out = mulaw_encode(pcm_8k)
-            await send_mulaw(mulaw_out)
+            # 3 ── Text-to-speech: stream chunks to Twilio as they arrive
+            await stream_tts(patient_text)
 
             if is_done:
                 state = CallState.DONE
@@ -357,7 +390,11 @@ async def stream_websocket(websocket: WebSocket) -> None:
                 )
 
             elif event == "media":
-                # Ignore inbound audio while we're busy or done
+                mulaw_chunk = base64.b64decode(data["media"]["payload"])
+                pcm_chunk = mulaw_decode(mulaw_chunk)
+                inbound_pcm.extend(pcm_chunk)  # always capture for local recording
+
+                # Ignore inbound audio for turn-detection while we're busy or done
                 if state in (
                     CallState.PATIENT_SPEAKING,
                     CallState.TRANSCRIBING,
@@ -366,8 +403,6 @@ async def stream_websocket(websocket: WebSocket) -> None:
                 ):
                     continue
 
-                mulaw_chunk = base64.b64decode(data["media"]["payload"])
-                pcm_chunk = mulaw_decode(mulaw_chunk)
                 chunk_rms = rms(pcm_chunk)
 
                 if chunk_rms > SILENCE_THRESHOLD:
@@ -380,7 +415,12 @@ async def stream_websocket(websocket: WebSocket) -> None:
                     audio_buffer.extend(pcm_chunk)
                     silence_samples += len(pcm_chunk) // 2  # bytes → samples
 
-                    if silence_samples >= SILENCE_SAMPLE_COUNT and not is_processing:
+                    silence_limit = (
+                        FIRST_TURN_SILENCE_COUNT if not first_turn_done
+                        else SILENCE_SAMPLE_COUNT
+                    )
+                    if silence_samples >= silence_limit and not is_processing:
+                        first_turn_done = True
                         turn_pcm = bytes(audio_buffer)
                         audio_buffer.clear()
                         silence_samples = 0
@@ -394,6 +434,7 @@ async def stream_websocket(websocket: WebSocket) -> None:
         print(f"    [WebSocket error] {exc}")
     finally:
         _save_transcript(scenario, scenario_num, transcript_lines, start_time)
+        _save_recording(bytes(inbound_pcm), bytes(outbound_pcm), scenario_num)
 
 
 # ─── Transcript writer ────────────────────────────────────────────────────────
@@ -419,7 +460,7 @@ def _save_transcript(
         f"Scenario: {scenario.get('name', 'Unknown')}",
         f"Date: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
         f"Duration: {duration}",
-        f"Recording: recordings/call_{scenario_num:02d}.mp3",
+        f"Recording: recordings/call_{scenario_num:02d}.wav",
         "=" * 45,
     ]
 
@@ -429,3 +470,40 @@ def _save_transcript(
             f.write("\n".join(lines) + "\n")
 
     print(f"    Transcript → {path}")
+
+
+def _save_recording(inbound: bytes, outbound: bytes, scenario_num: int) -> None:
+    """Write a stereo WAV — left channel = agent (inbound), right = patient (outbound).
+
+    Both channels are padded to the same length so the timeline is shared.
+    The outbound buffer is pre-aligned to wall-clock time in stream_tts, so
+    patient speech appears at the correct position relative to the agent.
+    """
+    if not inbound:
+        return
+    recordings_dir = BASE_DIR / "recordings"
+    recordings_dir.mkdir(exist_ok=True)
+    path = recordings_dir / f"call_{scenario_num:02d}.wav"
+
+    # Pad whichever track is shorter so both have equal sample counts
+    n_in = len(inbound) // 2   # 16-bit → samples
+    n_out = len(outbound) // 2
+    n = max(n_in, n_out)
+
+    in_arr = np.frombuffer(inbound, dtype=np.int16)
+    out_arr = np.frombuffer(outbound, dtype=np.int16)
+    in_arr = np.pad(in_arr, (0, n - n_in))
+    out_arr = np.pad(out_arr, (0, n - n_out))
+
+    # Interleave: [L0, R0, L1, R1, …]  (L = agent, R = patient)
+    stereo = np.empty(n * 2, dtype=np.int16)
+    stereo[0::2] = in_arr
+    stereo[1::2] = out_arr
+
+    with wave.open(str(path), "wb") as wf:
+        wf.setnchannels(2)
+        wf.setsampwidth(2)            # 16-bit PCM
+        wf.setframerate(SAMPLE_RATE)  # 8 000 Hz
+        wf.writeframes(stereo.tobytes())
+
+    print(f"    Recording  → {path}")

@@ -26,8 +26,18 @@ BASE_DIR = Path(__file__).parent.parent
 _QA_SYSTEM_PROMPT = """\
 You are a senior QA analyst evaluating a medical office AI phone agent.
 
-Your job is to read a call transcript and identify bugs — anything the agent
-said or did that was incorrect, harmful, confusing, or a missed opportunity.
+Your job is to read a call transcript and identify REAL bugs — things the agent
+actually did wrong, based on what happened in THIS conversation.
+
+CRITICAL RULE — Evaluate in context, not against pre-call assumptions:
+  The agent may legitimately give a different outcome than the scenario
+  description suggests if the conversation reveals new constraints. For example:
+  - If the agent offered an alternative date/time because the first choice was
+    unavailable, and the patient accepted, that is CORRECT behaviour — not a bug.
+  - If the patient corrected the agent and the agent acknowledged and adapted,
+    that is CORRECT behaviour — not a bug.
+  Only flag something as a bug if the agent's action was wrong given what was
+  said in the conversation itself.
 
 For EACH distinct bug found, output a block in EXACTLY this format (no
 variation in field names or order):
@@ -35,7 +45,7 @@ variation in field names or order):
 BUG: <one-sentence description of what went wrong>
 SEVERITY: <Critical | High | Medium | Low>
 TIMESTAMP: <MM:SS of first occurrence, e.g. 00:34>
-EXPECTED: <what the agent should have done>
+EXPECTED: <what the agent should have done, given the conversation context>
 ACTUAL: <what the agent actually did>
 ---
 
