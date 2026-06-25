@@ -1,0 +1,27 @@
+=============================================
+CALL TRANSCRIPT - Call #11
+Scenario: Context Retention After Topic Digression
+Date: 2026-06-24 23:48:54
+Duration: 4:18
+Recording: recordings/call_11.wav
+=============================================
+[00:14] AGENT: be recorded for quality and training purposes. Para Español, oprima el 2. Thanks for calling Civic Point Orthopedics, part of Pretty Good AI. Am I speaking with Margaret?
+[00:15] PATIENT: Yes, this is Margaret.
+[00:23] AGENT: Please provide your date of birth.
+[00:24] PATIENT: It's March 14, 1962.
+[00:49] AGENT: The birthday doesn't match our records, but for demo purposes, I'll accept it. How can I help you today?
+[00:49] PATIENT: I'm calling to book a follow-up appointment for my knee.
+[01:07] AGENT: You'd like to schedule a follow-up appointment for your knee. Is this correct?
+[01:07] PATIENT: Yes, that's right!
+[01:23] AGENT: Do you have a specific provider you'd like to see or are you open to the next available?
+[01:24] PATIENT: I’m open to the next available, that works for me!
+[02:03] AGENT: It looks like you already have a follow-up appointment of this type booked. If you'd like, I can help you reschedule or cancel that appointment. Would you like to make a change or do you need something else?
+[02:04] PATIENT: Oh, really? I didn't realize that. Let’s just reschedule it then!
+[02:26] AGENT: No problem. Would you like to reschedule for a specific day or time, or are you looking for the next available slot?
+[02:27] PATIENT: I’m looking for the next available slot, please.
+[02:44] AGENT: Let me check the next available slots for rescheduling your follow-up appointment. One moment. Let me check the next available slots for you.
+[02:44] PATIENT: Sure, take your time!
+[03:03] AGENT: Thanks for your patience. Let me fetch the next available slots for your follow-up appointment. Thanks for waiting. I'll get the next available options for your follow-up appointment. One moment.
+[03:04] PATIENT: No problem at all! I'm here.
+[03:29] AGENT: I appreciate it. I'll have those options for you shortly.
+[03:30] PATIENT: Thank you! I appreciate your help.

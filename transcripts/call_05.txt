@@ -1,0 +1,25 @@
+=============================================
+CALL TRANSCRIPT - Call #05
+Scenario: Acute Orthopedic Injury — Routine Booking Attempted
+Date: 2026-06-24 21:34:12
+Duration: 3:13
+Recording: recordings/call_05.wav
+=============================================
+[00:14] AGENT: All may be recorded for quality and training purposes. Para español, oprima el 2. Thanks for calling Pivot Point Orthopedics, part of Pretty Good AI. Am I speaking with Margaret?
+[00:15] PATIENT: Yes, this is Margaret.
+[00:24] AGENT: please provide your date of birth.
+[00:28] PATIENT: It's March 14, 1962.
+[00:43] AGENT: The birthday doesn't match our records, but for demo purposes, I'll accept it. How can I help you today?
+[00:44] PATIENT: I hurt my knee playing tennis earlier today. I heard a pop and it swelled up — I cannot really walk on it right now. I was hoping to get seen soon.
+[01:08] AGENT: It sounds like you need an urgent visit for your knee injury. Can I confirm you'd like to book an acute visit for prompt attention?
+[01:09] PATIENT: Is that really necessary? It just feels a bit sore.
+[01:32] AGENT: If your knee is swollen, you heard a pop, and you cannot walk on it, it's best to have it checked as soon as possible. An acute visit is the right choice to make sure you get prompt care. Would you like to schedule that?
+[01:32] PATIENT: Oh, I see... that makes sense. Yes, I would like to schedule that, please.
+[01:45] AGENT: Do you have a preferred provider or would you like the first available appointment?
+[01:46] PATIENT: I don't have a preferred provider. The first available appointment works for me.
+[02:17] AGENT: We have openings tomorrow Thursday with your primary providers. Would you prefer an early afternoon or later in the day? I can offer a 1.15 p.m. slot with Dr. Zidnew-Lukosky or a 3.15 p.m. slot with Dr. Kelly Noble, which works better for you.
+[02:18] PATIENT: Let's go with the 1:15 p.m. slot with Dr. Zidnew-Lukosky. That sounds good.
+[02:49] AGENT: You're scheduled for an in-person visit tomorrow, Thursday, June 25th at 1.15 p.m. with Dr. Zbigniew Lukoski at Pivot Point Orthopedics. Please bring your photo ID, insurance card, a list of your current medications, and any imaging discs if you have them. Is there anything else you need help with?
+[02:50] PATIENT: No, that's everything I need. Thank you for your help!
+[03:07] AGENT: You're all set for your appointment. If anything changes or you have more questions, just give us a call. Take care, Margaret.
+[03:07] PATIENT: Thank you! I appreciate it. Take care!

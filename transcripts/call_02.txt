@@ -1,0 +1,23 @@
+=============================================
+CALL TRANSCRIPT - Call #02
+Scenario: Reschedule Existing Appointment
+Date: 2026-06-24 20:59:41
+Duration: 2:20
+Recording: recordings/call_02.wav
+=============================================
+[00:15] AGENT: Your call may be recorded for quality and training purposes. Thanks for calling Pivot Point Orthopedics, part of Pretty Good AI. Am I speaking with Margaret?
+[00:16] PATIENT: Yes, this is Margaret.
+[00:24] AGENT: please provide your date of birth.
+[00:25] PATIENT: Um, it’s March 14, 1962.
+[00:41] AGENT: I heard your date of birth as March 14th, 1902. Could you please confirm if that's correct or let me know the correct year?
+[00:42] PATIENT: Oh, no, I'm sorry! It’s March 14, 1962, not 1902.
+[00:58] AGENT: The birthday doesn't match our records, but for demo purposes, I'll accept it. How can I help you today?
+[00:59] PATIENT: Um, I need to reschedule my upcoming orthopedics appointment. I’m really sorry for the inconvenience, but I have a scheduling conflict. Could we move it to two days later, preferably in the morning?
+[01:21] AGENT: Subs by www.zeoranger.co.uk
+[01:22] PATIENT: Uh, I think there was a mix-up. Can we focus on rescheduling my appointment? I’d really appreciate it.
+[01:40] AGENT: It looks like there isn't an upcoming appointment on file for you to reschedule. If you'd like, I can help you book a new appointment.
+[01:41] PATIENT: Oh, I'm sorry about the confusion. I thought I had an appointment scheduled. Could you help me book a new one for two days later in the morning, please?
+[02:01] AGENT: Sure, I can help with that. Is this visit for a general office visit, a follow-up, or something else?
+[02:02] PATIENT: It's for a follow-up appointment, I believe. Thank you for your help!
+[02:18] AGENT: Thank you.
+[02:19] PATIENT: You're welcome! Do you have a specific time in the morning that works best for you?

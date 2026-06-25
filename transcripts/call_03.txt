@@ -1,0 +1,15 @@
+=============================================
+CALL TRANSCRIPT - Call #03
+Scenario: Cancel Existing Appointment
+Date: 2026-06-24 21:01:53
+Duration: 1:21
+Recording: recordings/call_03.wav
+=============================================
+[00:15] AGENT: be recorded for quality and training purposes. Para Español, oprima el 2. Thanks for calling Pivot Point Orthopedics. Part of pretty good AI. Am I speaking with Margaret?
+[00:16] PATIENT: Yes, this is Margaret.
+[00:27] AGENT: please provide your date of birth.
+[00:28] PATIENT: It's March 14, 1962.
+[00:43] AGENT: The birthday doesn't match our records, but for demo purposes, I'll accept it. How can I help you today?
+[00:44] PATIENT: Oh, um, I'm actually calling to cancel my upcoming orthopedics appointment. My knee has been feeling much better lately!
+[01:08] AGENT: I'm unable to cancel your appointment right now. I'll connect you to our patient support team for help. Please stay on the line.
+[01:09] PATIENT: No thank you, I would rather keep talking to you — can we handle this together?

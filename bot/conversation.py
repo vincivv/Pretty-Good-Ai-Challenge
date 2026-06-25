@@ -56,7 +56,7 @@ SAMPLE_RATE = 8_000           # Twilio mulaw sample rate (Hz)
 SILENCE_THRESHOLD = 300.0     # RMS below this value → treat chunk as silence
 SILENCE_MS = 700              # consecutive silent ms required to end a turn
 SILENCE_SAMPLE_COUNT = int(SAMPLE_RATE * SILENCE_MS / 1_000)  # 5 600 samples
-FIRST_TURN_SILENCE_MS = 1_500  # longer threshold for the agent's opener (multi-sentence)
+FIRST_TURN_SILENCE_MS = 1_200  # longer threshold for the agent's opener (multi-sentence)
 FIRST_TURN_SILENCE_COUNT = int(SAMPLE_RATE * FIRST_TURN_SILENCE_MS / 1_000)  # 12 000 samples
 CHUNK_SIZE = 160              # outbound mulaw samples per media message (~20 ms)
 MAX_TURNS = 20                # hard cap to prevent infinite loops
@@ -225,6 +225,7 @@ async def stream_websocket(websocket: WebSocket) -> None:
     has_speech = False           # have we received any speech this turn?
     is_processing = False        # prevent overlapping process_agent_turn calls
     first_turn_done = False      # use longer silence gate until opener finishes
+    ws_open = True               # set False when remote closes the WebSocket
 
     conversation_history: list[dict] = []
     transcript_lines: list[str] = []
@@ -246,6 +247,9 @@ async def stream_websocket(websocket: WebSocket) -> None:
     # ── helper: send a mulaw buffer to Twilio in real-time 20 ms chunks ─────────
 
     async def _send_mulaw_buffer(mulaw_bytes: bytes) -> None:
+        nonlocal ws_open
+        if not ws_open:
+            return
         for i in range(0, len(mulaw_bytes), CHUNK_SIZE):
             chunk = mulaw_bytes[i : i + CHUNK_SIZE]
             if len(chunk) < CHUNK_SIZE:
@@ -260,6 +264,8 @@ async def stream_websocket(websocket: WebSocket) -> None:
             try:
                 await websocket.send_text(msg)
             except Exception:
+                ws_open = False
+                print(f"    [DEBUG] WebSocket closed by remote at t={elapsed()} — stopping TTS")
                 return
             await asyncio.sleep(0.018)
 
@@ -293,6 +299,8 @@ async def stream_websocket(websocket: WebSocket) -> None:
             response_format="pcm",  # 24 kHz 16-bit mono PCM
         ) as tts_stream:
             async for raw in tts_stream.iter_bytes(chunk_size=4_096):
+                if not ws_open:
+                    break
                 buf.extend(raw)
                 while len(buf) >= TTS_CHUNK:
                     pcm_8k = resample_pcm(bytes(buf[:TTS_CHUNK]), 24_000, 8_000)
@@ -300,7 +308,7 @@ async def stream_websocket(websocket: WebSocket) -> None:
                     await _send_mulaw_buffer(mulaw_encode(pcm_8k))
                     del buf[:TTS_CHUNK]
 
-            if buf:  # flush final partial chunk
+            if buf and ws_open:  # flush final partial chunk
                 pcm_8k = resample_pcm(bytes(buf), 24_000, 8_000)
                 outbound_pcm.extend(pcm_8k)
                 await _send_mulaw_buffer(mulaw_encode(pcm_8k))
@@ -355,6 +363,12 @@ async def stream_websocket(websocket: WebSocket) -> None:
             raw_text = chat_resp.choices[0].message.content.strip()
             is_done = "[[END_CONVERSATION]]" in raw_text
             patient_text = raw_text.replace("[[END_CONVERSATION]]", "").strip()
+
+            # Never end before 5 full exchanges — the first response is always
+            # just an identity confirmation, so this prevents premature exits
+            if is_done and turn_count < 5:
+                is_done = False
+                print(f"    [DEBUG] [[END_CONVERSATION]] suppressed (turn {turn_count} < 5)")
 
             log("PATIENT", patient_text)
             conversation_history.append({"role": "assistant", "content": patient_text})
@@ -431,7 +445,7 @@ async def stream_websocket(websocket: WebSocket) -> None:
                 break  # call ended — fall through to finally
 
     except Exception as exc:
-        print(f"    [WebSocket error] {exc}")
+        print(f"    [WebSocket closed by remote] {type(exc).__name__}: {exc}")
     finally:
         _save_transcript(scenario, scenario_num, transcript_lines, start_time)
         _save_recording(bytes(inbound_pcm), bytes(outbound_pcm), scenario_num)

@@ -1,0 +1,27 @@
+=============================================
+CALL TRANSCRIPT - Call #00
+Scenario: Setup — Cancel All Existing Appointments
+Date: 2026-06-24 20:50:11
+Duration: 3:13
+Recording: recordings/call_00.wav
+=============================================
+[00:23] AGENT: may be recorded for quality and training purposes. Para espanol, oprima el dos. Thanks for calling Pivot Point Orthopedics, part of Pretty Good AI. Am I speaking with Margaret?
+[00:24] PATIENT: Yes, this is Margaret.
+[00:35] AGENT: please provide your date of birth.
+[00:36] PATIENT: My date of birth is March 14, 1962.
+[00:54] AGENT: The birthday doesn't match our records, but for dental purposes, I'll accept it.
+[00:55] PATIENT: Oh, um, I see. I hope that’s okay. What do I need to do next?
+[01:17] AGENT: You're all set for now. Just let me know what you need help with, appointments, medication refills, insurance updates, or anything else related to your care. What would you like to do today?
+[01:18] PATIENT: I would like to cancel all of my upcoming appointments, please.
+[01:39] AGENT: You have two upcoming appointments on Thursday, June 25. One is with Dr. McClain at 10 a.m. and the other is at 1 15 p.m.
+[01:40] PATIENT: Yes, I want to cancel both of those appointments, please.
+[01:50] AGENT: Could you share your reason for cancelling these appointments?
+[01:51] PATIENT: Oh, um, I’d rather not share the details right now. I just want to cancel them, please.
+[02:10] AGENT: No problem. Just to confirm, you want to cancel both appointments on Thursday, June 25th with Dr. McClain. Is that correct?
+[02:11] PATIENT: Yes, that’s correct. I want both of those appointments cancelled.
+[02:24] AGENT: only process those cancellations for you. One moment.
+[02:25] PATIENT: Sure, take your time. Thank you!
+[02:43] AGENT: Your appointment with Zig Bangu-Lukosky at 1.15 p.m. on Thursday has also been cancelled.
+[02:44] PATIENT: Great, thank you for confirming that! Is there anything else I need to do?
+[03:07] AGENT: You're all set.
+[03:09] PATIENT: Thank you so much for your help! I appreciate it. Have a good day!

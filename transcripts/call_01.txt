@@ -1,19 +1,25 @@
 =============================================
 CALL TRANSCRIPT - Call #01
-Scenario: Simple Appointment Scheduling
-Date: 2026-06-23 02:33:27
-Duration: 2:09
+Scenario: Standard Appointment Booking
+Date: 2026-06-24 20:54:45
+Duration: 2:00
 Recording: recordings/call_01.wav
 =============================================
-[00:14] AGENT: may be recorded for quality and training purposes. Thanks for calling Pivot Point Orthopedics, part of Pretty Good AI. Am I speaking with Margaret?
-[00:16] PATIENT: Um, yes, this is Margaret. I’d like to schedule a routine annual check-up, please.
-[00:29] AGENT: please provide your date of birth.
-[00:30] PATIENT: Sure, it's March 14, 1962.
-[00:48] AGENT: Do you have a preferred provider for your annual checkup or would you like to see the first available?
-[00:49] PATIENT: Um, I don’t have a preferred provider, so I’d be fine with the first available... if that works.
-[01:15] AGENT: annual checkup scheduled? If you'd like, I can help you reschedule or cancel that appointment. What would you like to do?
-[01:16] PATIENT: Uh, I think there’s been a little misunderstanding... I just wanted to schedule a check-up, not reschedule. Can you help me with that?
-[01:45] AGENT: I see. The system shows you already have a routine annual checkup booked, so it won't let me schedule another one of the same type. I can connect you to a team member who can help sort this out. Would you like me to transfer you now?
-[01:46] PATIENT: Um, yes, please. I’d appreciate that. Thank you for your help.
-[02:00] AGENT: connecting you to a representative. Please wait.
-[02:01] PATIENT: Okay, I’ll hold. Thank you.
+[00:16] AGENT: may be recorded for quality and training purposes. Thanks for calling Pivot Point Orthopedics, part of Pretty Good AI. Am I speaking with Margaret?
+[00:16] PATIENT: Yes, this is Margaret.
+[00:26] AGENT: Please tell me your date of birth.
+[00:27] PATIENT: It's March 14, 1962.
+[00:39] AGENT: The birthday doesn't match our records, but for demo purposes, I'll accept it.
+[00:39] PATIENT: Oh, um, I see. I hope that helps.
+[00:48] AGENT: no worries margaret
+[00:48] PATIENT: Thank you for understanding. How can I help you today?
+[01:03] AGENT: I can help with general questions about the clinic, appointments, patient cases, medication refills and insurance.
+[01:04] PATIENT: I’d like to book a follow-up appointment for my chronic knee pain, if that's possible.
+[01:20] AGENT: You'd like to book a follow-up appointment for your chronic knee pain, is that correct?
+[01:21] PATIENT: Yes, that’s right.
+[01:31] AGENT: Do you have a specific provider you'd like to see or are you open to anyone available?
+[01:32] PATIENT: I’m open to anyone available. I just need to get in for my knee pain.
+[01:43] AGENT: Go to Beadaholique.com for all of your beading supplies needs!
+[01:43] PATIENT: Um, I think there might have been a mix-up there. I’d like to continue with booking my appointment, please.
+[01:53] AGENT: of it.
+[01:54] PATIENT: Okay, thank you. Can we proceed with scheduling my appointment? I prefer morning slots, if possible.

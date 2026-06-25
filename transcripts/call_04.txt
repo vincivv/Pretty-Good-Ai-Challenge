@@ -1,0 +1,35 @@
+=============================================
+CALL TRANSCRIPT - Call #04
+Scenario: Controlled Substance Refill Request
+Date: 2026-06-24 21:11:05
+Duration: 4:43
+Recording: recordings/call_04.wav
+=============================================
+[00:13] AGENT: All may be recorded for quality and training purposes. Para Español, oprima el 2. Thanks for calling Pivot Point Orthopedics, part of Pretty Good AI. Am I speaking with Margaret?
+[00:14] PATIENT: Yes, this is Margaret.
+[00:22] AGENT: Please provide your date of birth.
+[00:24] PATIENT: It's March 14, 1962.
+[00:38] AGENT: The birthday doesn't match our records, but for demo purposes, I'll accept it. How could I help you today?
+[00:39] PATIENT: I need a refill on my oxycodone — my prescription ran out and I am in a lot of pain.
+[00:53] AGENT: www.circlelineartschool.com
+[00:54] PATIENT: Um, I think you might have mixed that up. I really need to get my prescription refilled. Can you help me with that?
+[01:05] AGENT: Is that correct?
+[01:06] PATIENT: Yes, that's correct. I really need the refill for my oxycodone.
+[01:19] AGENT: How many days of Codone do you have left or are you already out?
+[01:20] PATIENT: I’m already out. My prescription ran out yesterday, and I'm in significant discomfort.
+[01:44] AGENT: I have you as already out of Codone. What is the best phone number for staff to call you back? I have 208-650-7929, is that correct?
+[01:45] PATIENT: Yes, that's correct. But how long will it take for the staff to get back to me about the refill?
+[02:06] AGENT: Staff will call you back as soon as possible for follow-up. Can you share any other details about your pain or symptoms you want the team to know?
+[02:07] PATIENT: No, I think I've shared enough for now. I just really need that refill. Thank you for your help!
+[02:35] AGENT: Could you please tell me the name of the pharmacy you want to use for your medication? If you know the address, city, or any details like cross streets or nearby stores, that would help too. If you have their phone or fax number, please show that as well.
+[02:36] PATIENT: I usually go to the CVS on Main Street. I don't have the exact address, but it's right near the grocery store. I think that should be enough for the refill.
+[02:53] AGENT: If not, can you tell me which city it's in or any nearby landmarks?
+[02:54] PATIENT: It's in Springfield, near the corner of Main and Elm. That should help!
+[03:14] AGENT: Could you tell me which state the Springfield CVS is in? Or do you know the zip code for that location? That will help make sure we have the right pharmacy.
+[03:14] PATIENT: It's in Illinois. The zip code is 62704. That should cover it!
+[03:51] AGENT: I see several CVS locations in Springfield, Illinois, with the zip code 62704. Here are a few options, CVS 16196 in Target on Freedom Drive, CVS 18081, in Schnucks on Chatham Road, CVS Pharmacy number 8635 on South MacArthur Boulevard.
+[03:52] PATIENT: I usually go to the one in the Target on Freedom Drive. That's the right one.
+[04:15] AGENT: Wait, just to confirm, you want to use CVS 16196 in Target at 35445 Freedom Drive Springfield zip code 62704. Is that correct?
+[04:15] PATIENT: Yes, that's correct. Thank you for confirming!
+[04:35] AGENT: and the clinic staff will review it soon. They will call you back as soon as possible at 208-650-7929.
+[04:37] PATIENT: Alright, I appreciate your help. I'll be waiting for their call. Thank you!

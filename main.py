@@ -70,15 +70,41 @@ def open_tunnel(port: int = 8000) -> str:
 # Scenario runner
 # ---------------------------------------------------------------------------
 
-def init_bug_report() -> None:
-    """Write the bug report header at the start of a run."""
+def init_bug_report(scenarios_to_run: list) -> None:
+    """Append a new run header to the bug report — never overwrites previous runs."""
     REPORTS_DIR.mkdir(exist_ok=True)
     report_path = REPORTS_DIR / "bug_report.md"
-    with open(report_path, "w") as f:
-        f.write(f"# Bug Report\n\n")
-        f.write(f"**Generated:** {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}  \n")
-        f.write(f"**Target:** {os.environ.get('TARGET_PHONE_NUMBER', '+18054398008')}  \n\n")
+
+    is_new = not report_path.exists() or report_path.stat().st_size == 0
+    scenario_ids = ", ".join(str(s["id"]) for s in scenarios_to_run)
+
+    with open(report_path, "a") as f:
+        if is_new:
+            f.write("# Bug Report\n\n")
+        else:
+            f.write("\n\n")
+        f.write(f"## Run — {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+        f.write(f"**Target:** {os.environ.get('TARGET_PHONE_NUMBER', '+18054398008')}  \n")
+        f.write(f"**Scenarios:** {scenario_ids}  \n\n")
         f.write("---\n")
+
+
+def _write_analysis_error(
+    scenario: dict,
+    scenario_num: int,
+    transcript_path: "Path",
+    error: str,
+) -> None:
+    """Append a placeholder entry when QA analysis throws an exception."""
+    report_path = REPORTS_DIR / "bug_report.md"
+    REPORTS_DIR.mkdir(exist_ok=True)
+    with open(report_path, "a") as f:
+        f.write(f"\n\n### Call #{scenario_num:02d} — {scenario.get('name', 'Unknown')}\n\n")
+        f.write(f"| Field | Value |\n|---|---|\n")
+        f.write(f"| Date | {datetime.now().strftime('%Y-%m-%d %H:%M:%S')} |\n")
+        f.write(f"| Transcript | `{transcript_path.name}` |\n")
+        f.write(f"| Bugs found | N/A (analysis error) |\n\n")
+        f.write(f"_Analysis failed — {error}_\n\n---\n")
 
 
 def run_scenario(
@@ -137,8 +163,13 @@ def run_scenario(
     # Only run QA if the transcript contains actual conversation turns
     transcript_text = transcript_path.read_text()
     if "[" in transcript_text:
-        bugs = analyze_transcript(transcript_path, scenario, scenario_num)
-        print(f"  Bugs found: {len(bugs)}")
+        try:
+            bugs = analyze_transcript(transcript_path, scenario, scenario_num)
+            print(f"  Bugs found: {len(bugs)}")
+        except Exception as exc:
+            print(f"  [WARN] Analysis failed: {exc}")
+            # Write a placeholder so the call is still recorded in the report
+            _write_analysis_error(scenario, scenario_num, transcript_path, str(exc))
     else:
         print(f"  [SKIP] No conversation to analyse (call status: {final_status})")
 
@@ -154,7 +185,7 @@ def main() -> None:
     parser.add_argument(
         "--scenario",
         default="all",
-        help="Scenario ID (1-18) or 'all'  (default: all)",
+        help="Scenario ID (0-15) or 'all'  (default: all)",
     )
     parser.add_argument(
         "--delay",
@@ -186,10 +217,14 @@ def main() -> None:
     if args.scenario.lower() == "all":
         scenarios_to_run = all_scenarios
     else:
-        idx = int(args.scenario) - 1
-        if idx < 0 or idx >= len(all_scenarios):
-            sys.exit(f"[ERROR] Scenario {args.scenario} out of range (1–{len(all_scenarios)})")
-        scenarios_to_run = [all_scenarios[idx]]
+        try:
+            target_id = int(args.scenario)
+        except ValueError:
+            sys.exit(f"[ERROR] Invalid scenario: {args.scenario!r} — must be an integer or 'all'")
+        scenarios_to_run = [s for s in all_scenarios if s["id"] == target_id]
+        if not scenarios_to_run:
+            valid = sorted(s["id"] for s in all_scenarios)
+            sys.exit(f"[ERROR] Scenario {args.scenario} not found (valid IDs: {valid})")
 
     print("=" * 60)
     print("  Medical AI Voice Bot – starting up")
@@ -206,7 +241,7 @@ def main() -> None:
     ngrok_url = open_tunnel(port=8000)
     print(f"  ngrok URL : {ngrok_url}")
 
-    init_bug_report()
+    init_bug_report(scenarios_to_run)
 
     # Run scenarios sequentially
     try:
