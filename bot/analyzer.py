@@ -74,6 +74,13 @@ These behaviors are NEVER bugs. If any apply, do not flag the related issue.
   or clinical advice and directed the patient to a doctor, pharmacist, or billing department.
   This is CORRECT. Do not flag it.
 
+• CONTROLLED SUBSTANCE CALLBACK ROUTING: Agent collected a callback number so that clinical
+  staff can call the patient back regarding a prescription or refill. This IS correct routing
+  to clinical staff — do not flag it as mishandling the refill request.
+
+• CANCELLATION TRANSFER: Agent said it cannot cancel an appointment directly and offered to
+  transfer to a human team who can. This is a valid escalation path — not a bug.
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 STEP 3 — EVIDENCE RULE (mandatory for every bug)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

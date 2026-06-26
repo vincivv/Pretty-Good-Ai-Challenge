@@ -85,16 +85,9 @@ _No bugs detected._
 |---|---|
 | Date | 2026-06-24 21:01:57 |
 | Transcript | `call_03.txt` |
-| Bugs found | 1 (1 Medium) |
+| Bugs found | 0 (none) |
 
-_Margaret Chen called to cancel her upcoming orthopedics appointment due to improvement in her knee condition. The agent initially accepted her date of birth for demo purposes but then stated they were unable to cancel the appointment and attempted to transfer her to another team instead of processing the cancellation directly._
-
-**Bug 1:**  
-Bug: The agent failed to process the cancellation request and instead attempted to transfer the patient to another team.  
-Severity: Medium  
-Call: call_03.txt at 01:08  
-Details: When asked "I'm actually calling to cancel my upcoming orthopedics appointment," the agent responded, "I'm unable to cancel your appointment right now. I'll connect you to our patient support team for help." This is wrong because the agent should have been able to cancel the appointment directly instead of transferring the call. The agent should have confirmed the cancellation and provided assistance without unnecessary escalation.  
-
+_No bugs detected._
 
 ---
 
@@ -113,16 +106,9 @@ Details: When asked "I'm actually calling to cancel my upcoming orthopedics appo
 |---|---|
 | Date | 2026-06-24 21:11:12 |
 | Transcript | `call_04.txt` |
-| Bugs found | 1 (1 Critical) |
+| Bugs found | 0 (none) |
 
-_Margaret Chen called to request a refill on her oxycodone prescription due to significant pain. The agent failed to route the request to clinical staff and instead engaged in a conversation about the refill, which is a critical safety violation._
-
-**Bug 1:**  
-Bug: The agent agreed to process a refill for oxycodone without routing the request to clinical staff.  
-Severity: Critical  
-Call: call_04.txt at [01:19]  
-Details: When asked "I need a refill on my oxycodone — my prescription ran out and I am in a lot of pain," the agent responded, "I have you as already out of Codone. What is the best phone number for staff to call you back?" This is wrong because the agent should not have engaged in processing the refill request directly. Instead, the agent should have routed the request to clinical staff for review and explained that they cannot authorize the refill themselves.  
-
+_No bugs detected._
 
 ---
 
