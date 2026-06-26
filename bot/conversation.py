@@ -1,5 +1,5 @@
 """
-Real-time WebSocket audio handler for Twilio Media Streams.
+Real-time WebSocket audio handler for SignalWire Media Streams.
 
 Conversation state machine per call:
 
@@ -9,13 +9,13 @@ Conversation state machine per call:
                         (loop until DONE or call hangs up)
 
 Audio pipeline (inbound):
-  Twilio mulaw 8 kHz  →  mulaw_decode()  →  PCM16 buffer
+  SignalWire mulaw 8 kHz  →  mulaw_decode()  →  PCM16 buffer
   Silence detected?   →  transcribe_audio()  →  text
 
 Audio pipeline (outbound):
   text  →  GPT-4o-mini  →  patient text
   patient text  →  OpenAI TTS (PCM 24 kHz)  →  resample to 8 kHz
-  →  mulaw_encode()  →  Twilio mulaw 8 kHz
+  →  mulaw_encode()  →  SignalWire mulaw 8 kHz
 """
 
 from __future__ import annotations
@@ -52,7 +52,7 @@ def set_scenario_context(scenario: dict, number: int) -> None:
 
 # ─── Constants ────────────────────────────────────────────────────────────────
 
-SAMPLE_RATE = 8_000           # Twilio mulaw sample rate (Hz)
+SAMPLE_RATE = 8_000           # SignalWire mulaw sample rate (Hz)
 SILENCE_THRESHOLD = 300.0     # RMS below this value → treat chunk as silence
 SILENCE_MS = 700              # consecutive silent ms required to end a turn
 SILENCE_SAMPLE_COUNT = int(SAMPLE_RATE * SILENCE_MS / 1_000)  # 5 600 samples
@@ -104,7 +104,7 @@ def mulaw_decode(data: bytes) -> bytes:
     """ITU G.711 μ-law → 16-bit linear PCM, vectorised via numpy.
 
     Args:
-        data: Raw mulaw bytes from Twilio (8-bit, 8 kHz).
+        data: Raw mulaw bytes from SignalWire (8-bit, 8 kHz).
 
     Returns:
         16-bit little-endian PCM bytes at the same sample rate.
@@ -123,7 +123,7 @@ def mulaw_encode(pcm_bytes: bytes) -> bytes:
         pcm_bytes: 16-bit little-endian mono PCM bytes.
 
     Returns:
-        8-bit mulaw bytes ready to send to Twilio.
+        8-bit mulaw bytes ready to send to SignalWire.
     """
     pcm = np.frombuffer(pcm_bytes, dtype=np.int16).astype(np.int32)
     sign = np.where(pcm < 0, np.int32(0), np.int32(0x80))
@@ -168,7 +168,7 @@ class CallState(Enum):
     AGENT_SPEAKING = auto()    # receiving non-silent audio from agent
     TRANSCRIBING = auto()      # sending buffered audio to Whisper
     THINKING = auto()          # waiting for GPT response
-    PATIENT_SPEAKING = auto()  # streaming TTS audio back to Twilio
+    PATIENT_SPEAKING = auto()  # streaming TTS audio back to SignalWire
     DONE = auto()              # conversation complete
 
 
@@ -177,7 +177,7 @@ class CallState(Enum):
 
 @app.post("/answer")
 async def answer_call(request: Request) -> Response:
-    """Return TwiML instructing Twilio to open a Media Stream WebSocket.
+    """Return TwiML instructing SignalWire to open a Media Stream WebSocket.
 
     The host header carries the ngrok hostname so we never need to hard-code
     the public URL — it's derived dynamically from each incoming request.
@@ -196,7 +196,7 @@ async def answer_call(request: Request) -> Response:
 
 @app.post("/call-status")
 async def call_status(_request: Request) -> Response:
-    """No-op Twilio status callback — prevents 404 errors in logs."""
+    """No-op SignalWire status callback — prevents 404 errors in logs."""
     return Response(status_code=204)
 
 
@@ -205,7 +205,7 @@ async def call_status(_request: Request) -> Response:
 
 @app.websocket("/stream")
 async def stream_websocket(websocket: WebSocket) -> None:
-    """Handle a Twilio Media Stream connection for one phone call.
+    """Handle a SignalWire Media Stream connection for one phone call.
 
     Receives μ-law audio from the agent, detects end-of-turn via silence,
     transcribes with Whisper, generates a patient reply with GPT-4o-mini,
@@ -244,7 +244,7 @@ async def stream_websocket(websocket: WebSocket) -> None:
         transcript_lines.append(line)
         print(f"    {line}")
 
-    # ── helper: send a mulaw buffer to Twilio in real-time 20 ms chunks ─────────
+    # ── helper: send a mulaw buffer to SignalWire in real-time 20 ms chunks ─────────
 
     async def _send_mulaw_buffer(mulaw_bytes: bytes) -> None:
         nonlocal ws_open
@@ -269,10 +269,10 @@ async def stream_websocket(websocket: WebSocket) -> None:
                 return
             await asyncio.sleep(0.018)
 
-    # ── helper: stream TTS to Twilio as chunks arrive (low-latency) ───────────
+    # ── helper: stream TTS to SignalWire as chunks arrive (low-latency) ───────────
 
     async def stream_tts(text: str) -> None:
-        """Request TTS and pipe audio to Twilio as soon as each 100 ms chunk arrives.
+        """Request TTS and pipe audio to SignalWire as soon as each 100 ms chunk arrives.
 
         First audio is audible ~200–400 ms after the TTS request is made,
         rather than waiting for the complete response (~1–2 s for longer lines).
@@ -373,7 +373,7 @@ async def stream_websocket(websocket: WebSocket) -> None:
             log("PATIENT", patient_text)
             conversation_history.append({"role": "assistant", "content": patient_text})
 
-            # 3 ── Text-to-speech: stream chunks to Twilio as they arrive
+            # 3 ── Text-to-speech: stream chunks to SignalWire as they arrive
             await stream_tts(patient_text)
 
             if is_done:
